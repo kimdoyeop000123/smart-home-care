@@ -1,0 +1,94 @@
+<!doctype html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>모바일&스마트시스템 미니프로젝트</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/paho-mqtt/1.0.2/mqttws31.min.js" type="text/javascript"></script>
+    <script src="./static/cameramqttio.js" type="text/javascript"></script>
+    <script src="./static/cameraimage.js" type="text/javascript"></script>
+    <script src="./static/mychart.js" type="text/javascript"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.9.4/Chart.min.js" type="text/javascript"></script>
+
+    <script>
+        window.addEventListener("load", function () {
+            var url = new String(document.location);
+            ip = (url.split("//"))[1];
+            ip = (ip.split(":"))[0];
+            document.getElementById("broker").value = ip;
+        });
+
+        function connect() {
+            if (connectionFlag == true) return;
+            let broker = document.getElementById("broker").value;
+            let port = 9001;
+            document.getElementById("messages").innerHTML += '<span>접속 : ' + broker + ' 포트 ' + port + '</span><br/>';
+            document.getElementById("messages").innerHTML += '<span>사용자 ID : ' + CLIENT_ID + '</span><br/>';
+            client = new Paho.MQTT.Client(broker, Number(port), CLIENT_ID);
+            client.onConnectionLost = onConnectionLost;
+            client.onMessageArrived = onMessageArrived;
+            client.connect({ onSuccess: onConnect });
+        }
+
+        // GPIO 6 LED 제어 함수
+        function controlLED(value) {
+            publish('led', value);
+        }
+    </script>
+
+    <style>
+        canvas { background-color: lightblue; }
+    </style>
+</head>
+
+<body>
+    <h3>홈 케어 서비스</h3>
+    <hr>
+    <form id="connection-form">
+        <b>브로커 IP:</b>
+        <input id="broker" type="text" name="broker" value=""><br>
+        <b>포트 번호 : 9001</b><br>
+        <input type="button" onclick="connect()" value="Connect">
+        <input type="button" onclick="disconnect()" value="Disconnect">
+    </form>
+    <hr>
+
+    <h3>CCTV</h3>
+    <hr>
+    <form id="subscribe-form">
+        <input type="button" onclick="startCamera()" value="카메라 시작">
+        <input type="button" onclick="stopCamera()" value="카메라 중지">
+    </form>
+    <canvas id="myCanvas" width="320" height="240"></canvas>
+    <hr>
+
+    <h3>LED 제어</h3>
+    <form id="LED-control-form">
+        <label>켜기 <input type="radio" name="led" value="1" onchange="controlLED(this.value)"></label>
+        <label>끄기 <input type="radio" name="led" value="0" onchange="controlLED(this.value)"></label>
+    </form>
+    <hr>
+
+    <h3>화재경보알림</h3>
+    <form id="temperature-form">
+        <input type="button" onclick="subscribe('temperature')" value="측정시작">
+        <input type="button" onclick="unsubscribe('temperature')" value="측정중단">
+    </form>
+    <div id="messages"></div>
+
+    <h3>습도</h3>
+    <form id="humidity-form">
+        <input type="button" onclick="subscribe('humidity')" value="측정시작">
+        <input type="button" onclick="unsubscribe('humidity')" value="측정중단">
+    </form>
+    <hr>
+
+    <h3>조도그래프</h3>
+    <form id="subscribe-form">
+        <input type="button" onclick="subscribe('ultrasonic')" value="측정시작">
+        <input type="button" onclick="unsubscribe('ultrasonic')" value="측정중단">
+    </form>
+    <button id="hideshow" onclick="hideshow()">Hide/Show Chart</button>
+    <canvas id="canvas" width="400" height="400"></canvas>
+    <hr>
+</body>
+</html>
